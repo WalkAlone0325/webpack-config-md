@@ -113,7 +113,7 @@ plugins：
 3.  使用：
 
 ```js
-module.export = {
+module.exports = {
   plugins: [
     // html-webpack-plugin，功能：默认会创建一个空的 HTML，自动引入打包输出的所有资源（js/css）
     new HtmlWebpackPlugin()
@@ -122,7 +122,7 @@ module.export = {
 ```
 
 ```js
-module.export = {
+module.exports = {
   plugins: [
     // html-webpack-plugin，功能：默认会创建一个空的HTML，自动引入打包输出的所有资源（js/css）
     // 需求：需要有结构的 html 文件
@@ -139,7 +139,7 @@ module.export = {
 下载：`npm i url-loader file-loader html-loade -D`
 
 ```js
-module.export = {
+module.exports = {
   // loader 配置
   module: {
     rules: [
@@ -171,6 +171,75 @@ module.export = {
         // 下载 html-loader
         // 处理 html 文件的img图片的（负责引入 img，从而能被 url-loader 进行打包处理）
         loader: 'html-loader'
+      }
+    ]
+  }
+}
+```
+
+### 打包字体文件等
+
+```js
+module.exports = {
+  module: {
+    rules: [
+      {
+        // 打包其他资源（除了 html/js/css 以外的资源）
+        // 排除的资源文件
+        exclude: /\.(css|js|html)$/,
+        loader: 'file-loader'
+      }
+    ]
+  }
+}
+```
+
+### 开发服务器 devServer
+
+```js
+module.exports = {
+  // 开发服务器 devServer：用来 自动化（自动编译，自动打开浏览器，自动刷新浏览器等）
+  // 特点：只会在内存中编译打包，不会有任何输出
+  // 启动 devServer指令为：npx webpack-dev-server （npm i webpack-dev-server -D）
+  devServer: {
+    contentBase: resolve(__dirname, 'build'),
+    // 启动 gzip 压缩
+    compress: true,
+    // 端口号
+    port: 3000,
+    // 自动打开浏览器
+    open: true
+  }
+}
+```
+
+### 开发环境基本配置
+
+```js
+module.exports = {
+  entry: './src/js/index.js',
+  output: {
+    // 会打包到 js 文件夹下
+    filename: 'js/built.js',
+    path: resolve(__dirname, 'build')
+  },
+  module: {
+    rules: [
+      {
+        test: /\.(jpg|png|gif)$/,
+        loader: 'url-loader',
+        options: {
+          limit: 8 * 1024,
+          name: '[hash: 10].[ext]'
+          esModule: false,
+          // 会将图片打包到 img 文件夹下
+          outputPath: 'img'
+        }
+      },
+      {
+        exclude: /\.(css|js|html|less|png)$/,
+        loader: 'file-loader',
+        outputPath: 'media'
       }
     ]
   }

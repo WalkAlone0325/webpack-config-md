@@ -68,6 +68,12 @@ module.exports = {
         // 下载 html-loader
         // 处理 html 文件的img图片的（负责引入 img，从而能被 url-loader 进行打包处理）
         loader: 'html-loader'
+      },
+      {
+        // 打包其他资源（除了 html/js/css 以外的资源）
+        // 排除的资源文件
+        exclude: /\.(css|js|html|less|png)$/,
+        loader: 'file-loader'
       }
     ]
   },
@@ -83,4 +89,17 @@ module.exports = {
   // 模式
   mode: 'develpoment', // 开发模式
   // mode: 'production'
+
+  // 开发服务器 devServer：用来 自动化（自动编译，自动打开浏览器，自动刷新浏览器等）
+  // 特点：只会在内存中编译打包，不会有任何输出
+  // 启动 devServer指令为：npx webpack-dev-server （npm i webpack-dev-server -D）
+  devServer: {
+    contentBase: resolve(__dirname, 'build'),
+    // 启动 gzip 压缩
+    compress: true,
+    // 端口号
+    port: 3000,
+    // 自动打开浏览器
+    open: true
+  }
 }
