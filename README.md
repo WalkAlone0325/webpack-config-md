@@ -1,6 +1,6 @@
-## Webpack
+# Webpack
 
-### webpack 是什么
+## webpack 是什么
 
 Webpack 是一种前端资源构建工具，一个静态模块打包器（module bundler）。
 在 webpack 看来，前端的所有资源文件（js/json/css/img/less/...）都会作为模块处理。它将根据模块的依赖关系进行静态分析，打包生成对应的静态资源（bundle）。
@@ -245,3 +245,228 @@ module.exports = {
   }
 }
 ```
+
+## 构建环境配置
+
+### 分离 css 文件
+
+插件：`npm i mini-css-extract-plugin -D`
+
+```js
+const { resolve } = require('path')
+const HtmlWebpackPlugin = require('html-webpack-plugin')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
+
+module.exports = {
+  entry: './src/js/index.js',
+  output: {
+    filename: 'js/built.js',
+    path: resolve(__dirname, 'build')
+  },
+  module: {
+    rules: [
+      {
+        test: /\.css$/,
+        use: [
+          // 创建style标签，将样式放入
+          // 'style-loader',
+          // 这个loader取代style-loader。作用：提取css成单独文件
+          MiniCssExtractPlugin.loader,
+          // 将css文件整合到js文件中
+          'css-loader'
+        ]
+      }
+    ]
+  },
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: './src/index.html'
+    }),
+    // 新加插件，用于分离js中css并生成单独文件
+    new MiniCssExtractPlugin({
+      // 对输出的文件进行重命名
+      filename: 'css/built.css'
+    })
+  ],
+  mode: 'development'
+}
+```
+
+### css 兼容性处理
+
+插件：`npm i postcss-loader postcss-preset-env -D`
+
+作用：帮 postcss 找到 **package.json** 中 browserslist 里面的配置，通过配置加载指定的 css 兼容性样式
+
+- `last 1 chrome version` 兼容最近的 Chrome 版本
+- `>0.2%` 98%的浏览器
+- `not dead` 没有废弃的
+
+```js
+module.exports = {
+  module: {
+    rules: [
+      {
+        test: /\.css$/,
+        use: [
+          // 创建style标签，将样式放入
+          // 'style-loader',
+          // 这个loader取代style-loader。作用：提取css成单独文件
+          MiniCssExtractPlugin.loader,
+          // 将css文件整合到js文件中
+          'css-loader',
+          /*
+          * css兼容性处理：postcss --> postcss-loader postcss-preset-env
+          * 帮postcss找到 package.json 中 browserslist 里面的配置，通过配置加载指定的css兼容性样式
+          */
+          // 使用loader的默认配置
+          //  'postcss-loader'
+          // 修改loader配置
+          {
+            loader: 'postcss-loader',
+            options: {
+              ident: 'postcss',
+              plugins: () => {
+                // postcss 插件
+                [require('postcss-preset-env')()]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+```
+
+```json
+{
+  "browserslist": {
+    // 开发环境 --> 设置node环境变量：process.env.NODE_ENV = development
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ],
+    // 生产环境：默认是看生产环境
+    "production": [">0.2%", "not dead", "not op_mini all"]
+  }
+}
+```
+
+### 压缩 css
+
+插件：`npm i optimize-css-assets-webpack-plugin -D`
+
+```js
+const OptimizeCssAssetsWebpackPlugin = require('optimize-css-assets-webpack-plugin')
+plugins: [
+  // 压缩css
+  new OptimizeCssAssetsWebpackPlugin()
+]
+```
+
+### js 语法检查
+
+语法检查： eslint
+
+插件：`npm i eslint-loader eslint -D`
+
+**注意：** 只检查自己的写的源代码，第三库是不需要检查的。
+
+设置检查规则：
+
+- package.json 中 **eslintConfig** 中设置
+  ```json
+   "eslintConfig": {
+    "extends": "airbnb-base"
+  }
+  ```
+  或者在 **.eslintrc** 文件中设置
+- ES6 检查 airbnb --> `npm i eslint-config-airbnb-base eslint eslint-plugin-import -D`
+- // eslint-disable-next-line （表示下一行 eslint 所有规则都失效，即下一行不进行 eslint 检查）
+
+```js
+module.exports = {
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        exclude: /node_modules/,
+        loader: 'eslint-loader',
+        options: {
+          // 自动修复eslint的错误
+          fix: true
+        }
+      }
+    ]
+  }
+}
+```
+
+### js 兼容性处理 babel
+
+插件：`npm i babel-loader @babel/core @babel/preset-env -D`
+
+1. 基本 js 兼容性处理 --> **@babel/preset-env**
+   问题：只能转换基本语法，如 **promise** 高级语法不能转换
+2. （现在基本不用）全部的 js 兼容性处理 --> **@babel/polyfill**
+   插件：`npm i @babel/polyfill -D`
+   问题：只想解决部分兼容性问题，但是将所有的兼容性代码全部引入，体积太大
+3. 按需加载 js 兼容性处理：**core-js**
+
+```js
+module.exports = {
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        exclude: /node_modules/,
+        loader: 'babel-loader',
+        options: {
+          // 预设：指示babel做怎样的兼容性处理
+          presets: [
+            '@babel/preset-env',
+            {
+              // 按需加载
+              useBuiltIns: 'usage',
+              // 指定 core-js 版本
+              corejs: {
+                version: 3
+              },
+              // 指定兼容性做到哪个版本浏览器
+              targets: {
+                chrome: '60',
+                firefox: '60',
+                ie: '9',
+                safari: '10',
+                edge: '17'
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+
+### 压缩 html 和 js
+
+**注：**
+
+- js 压缩：生产环境（production）下会自动压缩 js 代码。即设置 webpack.config.js 中的 mode 为：`mode：'production'`
+- html 压缩：
+  ```js
+  plugins: [
+      new HtmlWebpackPlugin({
+        template: './src/index.html',
+        // 压缩 html 代码
+        minify: {
+          // 移除空格
+          collapseWhitespace: true,
+          // 移除注释
+          removeComments: true
+        }
+      }),
+    ],
+  ```

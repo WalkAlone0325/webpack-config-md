@@ -1,0 +1,35 @@
+{
+  "name": "webpack-config-md",
+  "version": "1.0.0",
+  "description": "Webpack 是一种前端资源构建工具，一个静态模块打包器（module bundler）。\r 在 webpack 看来，前端的所有资源文件（js/json/css/img/less/...）都会作为模块处理。它将根据模块的依赖关系进行静态分析，打包生成对应的静态资源（bundle）。",
+  "main": "webpack.config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WalkAlone0325/webpack-config-md.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/WalkAlone0325/webpack-config-md/issues"
+  },
+  "homepage": "https://github.com/WalkAlone0325/webpack-config-md#readme",
+  "browserslist": {
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ],
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ]
+  },
+  "eslintConfig": {
+    "extends": "airbnb-base"
+  }
+}
