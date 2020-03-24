@@ -136,7 +136,7 @@ module.exports = {
 
 ### 打包 img 图片资源
 
-下载：`npm i url-loader file-loader html-loade -D`
+下载：`npm i url-loader file-loader html-loader -D`
 
 ```js
 module.exports = {
@@ -454,7 +454,7 @@ module.exports = {
 
 **注：**
 
-- js 压缩：生产环境（production）下会自动压缩 js 代码。即设置 webpack.config.js 中的 mode 为：`mode：'production'`
+- js 压缩：生产环境（production）下会自动压缩 js 代码。即设置 webpack.config.js 中的 mode 为：`mode: 'production'`
 - html 压缩：
   ```js
   plugins: [
@@ -470,3 +470,155 @@ module.exports = {
       }),
     ],
   ```
+
+
+
+## 完整代码：
+
+**webpack.config.js** 文件
+
+```js
+const { resolve } = require('path')
+const HtmlWebpackPlugin = require('html-webpack-plugin')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
+const OptimizeCssAssetsWebpackPlugin = require('optimize-css-assets-webpack-plugin')
+
+// 设置nodejs环境变量：决定使用 browserslist 的哪个环境
+process.env.NODE_ENV = 'development'
+
+// 复用 loader
+const commonCssLoader = [
+  MiniCssExtractPlugin.loader,
+  'css-loader',
+  {
+    // 还需要在 package.json 中定义 browserslist
+    loader: 'postcss-loader',
+    options: {
+      ident: 'postcss',
+      plugins: () => {
+        [require('postcss-preset-env')()]
+      }
+    }
+  },
+]
+
+module.exports = {
+  entry: './src/js/index.js',
+  ouput: {
+    filename: 'js/built.js',
+    path: resolve(__dirname, 'build')
+  },
+  module: {
+    rules: [
+      {
+        test: /\.css$/,
+        use: [...commonCssLoader]
+      },
+      {
+        test: /\.less$/,
+        use: [
+          ...commonCssLoader,
+          'less-loader'
+        ]
+      },
+      /**
+       * 正常来讲，一个文件只能被一个loader处理。
+       * 当一个文件要被多个loader处理，那么一定要指定loader执行的先后顺序
+       * 先执行 eslint ，再执行 babel
+       */
+      {
+        // 在 package.json 中设置 eslintConfig --> airbnb
+        test: /\.js$/,
+        exclude: /node_modules/,
+        // 优先执行
+        enforce: 'pre',
+        loader: 'eslint-loader',
+        options: {
+          fix: true
+        }
+      },
+      {
+        test: /\.js$/,
+        exclude: /node_modules/,
+        loader: 'babel-loader',
+        options: {
+          presets: [
+            [
+              '@babel/preset-env',
+              {
+                useBuiltIns: 'useage',
+                corejs: { version: 3 },
+                targets: {
+                  chrome: '60',
+                  firefox: '60',
+                  ie: '9',
+                  safari: '10',
+                  edge: '17'
+                }
+              }
+            ]
+          ]
+        }
+      },
+      {
+        test: /\.(jpg|png|gif)$/,
+        loader: 'url-loader',
+        options: {
+          limit: 8 * 1024,
+          name: '[hash:10].[ext]',
+          outputPath: 'img',
+          esModule: false
+        }
+      },
+      {
+        test: /\.html$/,
+        loader: 'html-loader',
+      },
+      {
+        exclude: /\.(js|css|less|html|jpg|png|gif)$/,
+        loader: 'file-loader',
+        options: {
+          outputPath: 'media'
+        }
+      }
+    ],
+  },
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: './src/index.html',
+      minify: {
+        collapseWhitespace: true,
+        removeComments: true
+      }
+    }),
+    new MiniCssExtractPlugin({
+      filename: 'css/built.css'
+    }),
+    new OptimizeCssAssetsWebpackPlugin()
+  ],
+  mode: 'production'
+}
+```
+
+**package.json** 文件：
+
+```json
+{
+    "browserslist": {
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ],
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ]
+  },
+  "eslintConfig": {
+    "extends": "airbnb-base"
+  }
+}
+```
+
