@@ -2,6 +2,7 @@ const { resolve } = require('path')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const OptimizeCssAssetsWebpackPlugin = require('optimize-css-assets-webpack-plugin')
+const WorkboxWebpackPlugin = require('workbox-webpack-plugin')
 
 // 设置nodejs环境变量：决定使用 browserslist 的哪个环境
 process.env.NODE_ENV = 'development'
@@ -114,7 +115,14 @@ module.exports = {
     new MiniCssExtractPlugin({
       filename: 'css/built.css'
     }),
-    new OptimizeCssAssetsWebpackPlugin()
+    new OptimizeCssAssetsWebpackPlugin(),
+    new WorkboxWebpackPlugin.GenerateSW({
+      // 1. 帮助 serviceworker 快速启动
+      // 2. 删除旧的 serviceworker
+      // 生成一个 serviceworker 配置文件
+      clientsClaim: true,
+      skipWaiting: true
+    })
   ],
   mode: 'production'
 }

@@ -200,12 +200,67 @@ module.exports = {
 
 #### 懒加载 和 预加载
 
+> 懒加载：当文件需要时才加载
+
+> 预加载 prefetch：会在使用前，提前加载 js 文件。等其他资源加载完毕，浏览器空闲了，在偷偷加载资源
+
+> 正常加载可以认为是并行加载（同一时间加载多个文件）
+
 ```js
 // import动态导入语法：能将某个文件单独打包成一个 chunk
 // webpackChunkName 此处的注释可以命名打包后文件名，webpackPrefetch 预加载
 import(/* webpackChunkName: 'test', webpackPrefetch: true */ './test.js')
   .then(() => {})
   .catch(() => {})
+```
+
+#### PWA
+
+> PWA：渐进式网络开发应用程序（离线可访问）
+
+插件：workbox --> `npm i workbox-webpack-plugin -D`
+
+```js
+module.exports = {
+  plugins: [
+    new WorkboxWebpackPlugin.GenerateSW({
+      // 1. 帮助 serviceworker 快速启动
+      // 2. 删除旧的 serviceworker
+      // 生成一个 serviceworker 配置文件
+      clientsClaim: true,
+      skipWaiting: true
+    })
+  ]
+}
+```
+
+注册 serviceworker，并处理兼容性问题
+
+1.  eslint 不认识 window、navigator 等全局变量
+    解决：需要修改 package.json 中 eslintConfig 配置
+
+    ```json
+    "env": {
+      "browser": true
+    }
+    ```
+
+2.  sw 代码必须运行在服务器上
+
+```js
+// 注册 serviceworker，并处理兼容性问题
+if ('serviceworker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceworker
+      .register('/service-worker.js')
+      .then(() => {
+        console.log('sw注册成功了')
+      })
+      .catch(() => {
+        console.log('sw注册失败了')
+      })
+  })
+}
 ```
 
 ### 生产环境性能优化
