@@ -6,7 +6,9 @@
 ### 开发环境性能优化
 
 - 优化打包构建速度
+  - HMR
 - 优化代码调试
+  - source-map
 
 #### HMR
 
@@ -69,6 +71,21 @@ module.exports = {
   devtool: 'eval-source-map' // 'source-map'
 }
 ```
+
+### 生产环境性能优化
+
+- 优化打包构建速度
+  - oneOf
+  - babel 缓存
+  - 多进程打包
+  - externals
+  - dll
+- 优化代码运行的性能
+  - 缓存（hash -> chunkhash -> contenthash）
+  - tree shaking
+  - code split
+  - 懒加载/预加载
+  - PWA
 
 #### oneOf
 
@@ -263,7 +280,99 @@ if ('serviceworker' in navigator) {
 }
 ```
 
-### 生产环境性能优化
+#### 多进程打包
 
-- 优化打包构建速度
-- 优化代码运行的性能
+插件：`npm i thread-loader -D`
+
+进程启动大概为 600ms，进程通信也有开销。只有工作消耗品时间比较长，才需要多进程打包。
+
+```js
+module.exports = {
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        exclude: /node_modules/,
+        use: [
+          // 开启多进程打包
+          'thread-loader',
+          {
+            loader: 'babel-loader',
+            options: {
+              presets: []
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+#### externals
+
+1. 设置拒绝打包的库
+
+   ```js
+   module.exports = {
+     externals: {
+       // 忽略库名 --> npm包名
+       jquery: 'jQuery'
+     }
+   }
+   ```
+
+2. 在入口 index.html 引入 CDN
+   `<script src="xxx"></script>`
+
+#### dll
+
+对代码进行单独打包，（第三方库：jQuery，react，vue ...），第二次以后打包时不再打包第三方库。
+
+`webpack.dll.js` 文件：
+注：运行 webpack 时，默认查找 `webpack.config.js`，需要运行 webpack.dll.js 文件时，可以通过运行 `webpack --config webpack.dll.js` 实现运行
+
+```js
+const { resolve } = require('path')
+const webpack = require('webpack')
+
+module.exports = {
+  entry: {
+    // 最终打包生成的[name] --> jquery
+    // ['jquery'] --> 要打包的库是 jquery
+    jquery: ['jquery']
+  },
+  output: {
+    filename: '[name].js',
+    path: resolve(__dirname, 'dll'),
+    library: '[name]_[hash]' // 打包的库里面向外暴露的内容的名字
+  },
+  plugins: [
+    // 打包生成一个 manifest.json --> 提供和 jQuery 映射
+    new webpack.DllPlugin({
+      name: '[name]_[hash]', // 映射库的暴露的内容名称
+      path: resolve(__dirname, 'dll/manifest.json')
+    })
+  ],
+  mode: 'produciton'
+}
+```
+
+```js
+const { resolve } = require('path')
+const webpack = require('webpack')
+
+module.exports = {
+  plugins: [
+    // 告诉webpack哪些库不参与打包，同时使用名称改变
+    new webpack.DllReferencePlugin({
+      path: resolve(__dirname, 'dll/manifest.json')
+    }),
+    // 将某个文件打包输出，并在html中自动引入
+    new AddAssetHtmlWebpackPlugin({
+      filepath: resolve(__dirname, 'dll/jquery.js')
+    })
+  ],
+  mode: 'produciton'
+}
+```
